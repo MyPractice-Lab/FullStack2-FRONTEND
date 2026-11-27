@@ -3,8 +3,8 @@ import Nav from 'react-bootstrap/Nav'
 import NavDropdown from 'react-bootstrap/NavDropdown'
 import Navbar from 'react-bootstrap/Navbar'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { listarCategorias } from '../../data/categorias'
 import { useCarrito } from '../../hooks/useCarrito'
+import { useCatalogo } from '../../hooks/useCatalogo'
 import { useSesion } from '../../hooks/useSesion'
 import { formatearPrecio } from '../../utils/formato'
 import Boton from '../atomos/Boton'
@@ -13,7 +13,7 @@ import Buscador from '../moleculas/Buscador'
 function Encabezado() {
   const { totales, unidades } = useCarrito()
   const { usuario, autenticado, esAdministrador, cerrarSesion } = useSesion()
-  const categorias = listarCategorias()
+  const { categorias } = useCatalogo()
   const navegar = useNavigate()
 
   function salir() {

@@ -4,27 +4,34 @@ import { Link } from 'react-router-dom'
 import Aviso from '../../componentes/atomos/Aviso'
 import Boton from '../../componentes/atomos/Boton'
 import Etiqueta from '../../componentes/atomos/Etiqueta'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import ImagenProducto from '../../componentes/atomos/ImagenProducto'
 import Titulo from '../../componentes/atomos/Titulo'
-import { listarCategorias } from '../../data/categorias'
 import { eliminarProducto, listarProductos } from '../../data/productos'
+import { useCatalogo } from '../../hooks/useCatalogo'
+import { usePeticion } from '../../hooks/usePeticion'
 import { STOCK_CRITICO, precioFinal, tieneOferta } from '../../utils/catalogo'
 import { formatearPrecio } from '../../utils/formato'
 
 function ProductosAdmin() {
-  const [productos, setProductos] = useState(() => listarProductos())
-  const [aviso, setAviso] = useState('')
+  const { nombrePorSlug } = useCatalogo()
+  const { datos, cargando, error, recargar } = usePeticion(listarProductos)
+  const [aviso, setAviso] = useState(null)
 
-  const nombres = new Map(listarCategorias().map((categoria) => [categoria.slug, categoria.nombre]))
+  const productos = datos ?? []
 
-  function borrar(producto) {
+  async function borrar(producto) {
     if (!window.confirm(`¿Eliminar "${producto.nombre}" del catálogo?`)) {
       return
     }
 
-    eliminarProducto(producto.id)
-    setProductos(listarProductos())
-    setAviso(`Se eliminó "${producto.nombre}" del catálogo.`)
+    try {
+      await eliminarProducto(producto.id)
+      setAviso({ tono: 'exito', texto: `Se eliminó "${producto.nombre}" del catálogo.` })
+      recargar()
+    } catch (fallo) {
+      setAviso({ tono: 'error', texto: fallo.message })
+    }
   }
 
   return (
@@ -38,11 +45,13 @@ function ProductosAdmin() {
         </Boton>
       </div>
 
-      {aviso !== '' && (
-        <Aviso tono="exito" onCerrar={() => setAviso('')}>
-          {aviso}
+      {aviso !== null && (
+        <Aviso tono={aviso.tono} onCerrar={() => setAviso(null)}>
+          {aviso.texto}
         </Aviso>
       )}
+
+      <EstadoPeticion cargando={cargando} error={error} mensaje="Cargando el inventario..." />
 
       {productos.length === 0 ? (
         <p className="text-muted">No hay productos en el catálogo.</p>
@@ -74,7 +83,7 @@ function ProductosAdmin() {
                     </>
                   )}
                 </td>
-                <td>{nombres.get(producto.categoria) ?? producto.categoria}</td>
+                <td>{nombrePorSlug.get(producto.categoria) ?? producto.categoria}</td>
                 <td>{formatearPrecio(precioFinal(producto))}</td>
                 <td className={producto.stock <= STOCK_CRITICO ? 'zone-stock-critico' : undefined}>
                   {producto.stock}

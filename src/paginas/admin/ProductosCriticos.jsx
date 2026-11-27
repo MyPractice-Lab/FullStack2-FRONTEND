@@ -3,19 +3,25 @@ import Form from 'react-bootstrap/Form'
 import Table from 'react-bootstrap/Table'
 import { Link } from 'react-router-dom'
 import Aviso from '../../componentes/atomos/Aviso'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import Titulo from '../../componentes/atomos/Titulo'
 import { listarProductos } from '../../data/productos'
+import { usePeticion } from '../../hooks/usePeticion'
 import { STOCK_CRITICO, productosCriticos } from '../../utils/catalogo'
 
 function ProductosCriticos() {
   const [umbral, setUmbral] = useState(STOCK_CRITICO)
-  const criticos = productosCriticos(listarProductos(), umbral)
+  const { datos, cargando, error } = usePeticion(listarProductos)
+
+  const criticos = productosCriticos(datos ?? [], umbral)
 
   return (
     <>
       <Titulo nivel={1} bajada="Productos que conviene reponer antes de quedar sin stock.">
         Listado de productos críticos
       </Titulo>
+
+      <EstadoPeticion cargando={cargando} error={error} mensaje="Cargando el inventario..." />
 
       <Form.Group className="mb-3" style={{ maxWidth: '16rem' }}>
         <Form.Label htmlFor="umbral-critico">Umbral de stock</Form.Label>

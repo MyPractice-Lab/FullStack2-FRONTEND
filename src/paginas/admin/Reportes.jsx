@@ -1,17 +1,25 @@
 import Col from 'react-bootstrap/Col'
 import Row from 'react-bootstrap/Row'
 import Table from 'react-bootstrap/Table'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import Titulo from '../../componentes/atomos/Titulo'
 import TarjetaMetrica from '../../componentes/moleculas/TarjetaMetrica'
-import { listarCategorias } from '../../data/categorias'
 import { listarOrdenes } from '../../data/ordenes'
 import { listarProductos } from '../../data/productos'
+import { useCatalogo } from '../../hooks/useCatalogo'
+import { usePeticion } from '../../hooks/usePeticion'
 import { formatearPrecio } from '../../utils/formato'
 
 function Reportes() {
-  const ordenes = listarOrdenes()
-  const productos = listarProductos()
-  const categorias = listarCategorias()
+  const { categorias, cargando: cargandoCategorias, error: errorCategorias } = useCatalogo()
+  const peticionOrdenes = usePeticion(listarOrdenes)
+  const peticionProductos = usePeticion(listarProductos)
+
+  const ordenes = peticionOrdenes.datos ?? []
+  const productos = peticionProductos.datos ?? []
+
+  const cargando = cargandoCategorias || peticionOrdenes.cargando || peticionProductos.cargando
+  const error = errorCategorias ?? peticionOrdenes.error ?? peticionProductos.error
 
   const pagadas = ordenes.filter((orden) => orden.estado === 'pagada')
   const rechazadas = ordenes.length - pagadas.length
@@ -36,6 +44,8 @@ function Reportes() {
       <Titulo nivel={1} bajada="Informe generado a partir de las órdenes registradas.">
         Reportes
       </Titulo>
+
+      <EstadoPeticion cargando={cargando} error={error} mensaje="Generando el informe..." />
 
       <Row xs={1} md={3} className="g-3 mb-4">
         <Col>

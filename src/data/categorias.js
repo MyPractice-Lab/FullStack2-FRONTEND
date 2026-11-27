@@ -1,71 +1,37 @@
-import { guardar, leerConSemilla, siguienteId } from './almacenamiento'
-import { CLAVES } from './claves'
-import { categoriasSemilla } from './semillas'
-
-function leerCategorias() {
-  return leerConSemilla(CLAVES.categorias, categoriasSemilla)
-}
-
-function guardarCategorias(lista) {
-  return guardar(CLAVES.categorias, lista)
-}
-
-function crearSlug(nombre) {
-  return nombre
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-}
+import { api } from '../api/cliente'
 
 export function listarCategorias() {
-  return leerCategorias()
+  return api.obtener('/categorias')
 }
 
 export function obtenerCategoria(slug) {
-  return leerCategorias().find((categoria) => categoria.slug === slug) ?? null
+  return api.obtener(`/categorias/${encodeURIComponent(slug)}`)
 }
 
-export function obtenerCategoriaPorId(id) {
+export async function obtenerCategoriaPorId(id) {
   const buscado = Number(id)
-  return leerCategorias().find((categoria) => categoria.id === buscado) ?? null
+  const lista = await listarCategorias()
+
+  return lista.find((categoria) => categoria.id === buscado) ?? null
 }
 
 export function crearCategoria(datos) {
-  const lista = leerCategorias()
-  const nueva = {
-    id: siguienteId(lista),
-    slug: crearSlug(datos.nombre),
-    nombre: datos.nombre,
-    descripcion: datos.descripcion,
-    imagen: datos.imagen || '/assets/img/portada.jpg',
-  }
-
-  guardarCategorias([...lista, nueva])
-  return nueva
+  return api.crear('/categorias', cuerpoDe(datos))
 }
 
 export function actualizarCategoria(id, datos) {
-  const buscado = Number(id)
-  let actualizada = null
-
-  const lista = leerCategorias().map((categoria) => {
-    if (categoria.id !== buscado) {
-      return categoria
-    }
-
-    actualizada = { ...categoria, ...datos, id: buscado, slug: categoria.slug }
-    return actualizada
-  })
-
-  guardarCategorias(lista)
-  return actualizada
+  return api.reemplazar(`/categorias/${id}`, cuerpoDe(datos))
 }
 
 export function eliminarCategoria(id) {
-  const buscado = Number(id)
-  const lista = leerCategorias().filter((categoria) => categoria.id !== buscado)
-  guardarCategorias(lista)
-  return lista
+  return api.borrar(`/categorias/${id}`)
+}
+
+function cuerpoDe(datos) {
+  return {
+    slug: datos.slug,
+    nombre: datos.nombre,
+    descripcion: datos.descripcion,
+    imagen: datos.imagen,
+  }
 }

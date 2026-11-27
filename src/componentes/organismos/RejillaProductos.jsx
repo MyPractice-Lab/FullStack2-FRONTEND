@@ -1,14 +1,18 @@
+import { useContext } from 'react'
 import Col from 'react-bootstrap/Col'
 import Row from 'react-bootstrap/Row'
-import { listarCategorias } from '../../data/categorias'
+import { CatalogoContexto } from '../../contexto/CatalogoContexto'
 import TarjetaProducto from '../moleculas/TarjetaProducto'
 
+const SIN_NOMBRES = new Map()
+
 function RejillaProductos({ productos, onAgregar, mensajeVacio = 'No hay productos que mostrar.' }) {
+  const catalogo = useContext(CatalogoContexto)
+  const nombres = catalogo === null ? SIN_NOMBRES : catalogo.nombrePorSlug
+
   if (productos.length === 0) {
     return <p className="text-muted">{mensajeVacio}</p>
   }
-
-  const nombres = new Map(listarCategorias().map((categoria) => [categoria.slug, categoria.nombre]))
 
   return (
     <Row xs={1} sm={2} lg={4} className="g-3">

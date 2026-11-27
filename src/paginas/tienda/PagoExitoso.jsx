@@ -1,18 +1,24 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Aviso from '../../componentes/atomos/Aviso'
 import Boton from '../../componentes/atomos/Boton'
 import FichaOrden from '../../componentes/organismos/FichaOrden'
 import { obtenerOrden } from '../../data/ordenes'
+import { usePeticion } from '../../hooks/usePeticion'
 import { formatearFecha } from '../../utils/formato'
 
 function PagoExitoso() {
   const { codigo } = useParams()
   const [envio, setEnvio] = useState('')
 
-  const orden = obtenerOrden(codigo)
+  const pedirOrden = useCallback(() => obtenerOrden(codigo), [codigo])
+  const { datos: orden, cargando, error } = usePeticion(pedirOrden, [codigo])
 
-  if (orden === null) {
+  if (cargando) {
+    return <p className="text-muted">Cargando la boleta...</p>
+  }
+
+  if (error !== null || orden === null) {
     return (
       <p className="text-muted">
         No encontramos esa orden. <Link to="/productos">Volver al catálogo</Link>.

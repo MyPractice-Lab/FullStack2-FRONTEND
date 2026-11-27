@@ -1,22 +1,28 @@
 import Col from 'react-bootstrap/Col'
 import Row from 'react-bootstrap/Row'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import Titulo from '../../componentes/atomos/Titulo'
 import TarjetaCategoria from '../../componentes/moleculas/TarjetaCategoria'
 import RejillaProductos from '../../componentes/organismos/RejillaProductos'
-import { listarCategorias } from '../../data/categorias'
 import { listarProductos } from '../../data/productos'
 import { useCarrito } from '../../hooks/useCarrito'
+import { useCatalogo } from '../../hooks/useCatalogo'
+import { usePeticion } from '../../hooks/usePeticion'
 
 function Categorias() {
   const { agregar } = useCarrito()
-  const categorias = listarCategorias()
-  const productos = listarProductos()
+  const { categorias } = useCatalogo()
+  const { datos, cargando, error } = usePeticion(listarProductos)
+
+  const productos = datos ?? []
 
   return (
     <>
       <Titulo nivel={1} bajada="Los productos separados por tipo.">
         Categorías
       </Titulo>
+
+      <EstadoPeticion cargando={cargando} error={error} mensaje="Cargando el catálogo..." />
 
       <Row xs={2} lg={4} className="g-3 mb-5">
         {categorias.map((categoria) => (

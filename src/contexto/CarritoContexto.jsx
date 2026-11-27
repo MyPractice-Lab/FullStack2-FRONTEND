@@ -14,7 +14,34 @@ export const CarritoContexto = createContext(null)
 
 export function ProveedorCarrito({ children }) {
   const [lineas, setLineas] = useState(() => leerCarrito())
+  const [catalogo, setCatalogo] = useState([])
+  const [cargando, setCargando] = useState(true)
   const [aviso, setAviso] = useState('')
+
+  useEffect(() => {
+    let vigente = true
+
+    listarProductos()
+      .then((productos) => {
+        if (vigente) {
+          setCatalogo(productos)
+        }
+      })
+      .catch(() => {
+        if (vigente) {
+          setCatalogo([])
+        }
+      })
+      .finally(() => {
+        if (vigente) {
+          setCargando(false)
+        }
+      })
+
+    return () => {
+      vigente = false
+    }
+  }, [lineas])
 
   useEffect(() => {
     guardarCarrito(lineas)
@@ -47,11 +74,9 @@ export function ProveedorCarrito({ children }) {
   }, [])
 
   const detalle = useMemo(() => {
-    const productos = listarProductos()
-
     return lineas
       .map((linea) => {
-        const producto = productos.find((item) => item.id === linea.id)
+        const producto = catalogo.find((item) => item.id === linea.id)
 
         if (producto === undefined) {
           return null
@@ -67,12 +92,13 @@ export function ProveedorCarrito({ children }) {
         }
       })
       .filter((linea) => linea !== null)
-  }, [lineas])
+  }, [lineas, catalogo])
 
   const valor = useMemo(
     () => ({
       lineas,
       detalle,
+      cargando,
       totales: calcularTotales(detalle),
       unidades: contarUnidades(lineas),
       aviso,
@@ -81,7 +107,7 @@ export function ProveedorCarrito({ children }) {
       quitar,
       vaciar,
     }),
-    [lineas, detalle, aviso, agregar, cambiarCantidad, quitar, vaciar],
+    [lineas, detalle, cargando, aviso, agregar, cambiarCantidad, quitar, vaciar],
   )
 
   return <CarritoContexto.Provider value={valor}>{children}</CarritoContexto.Provider>

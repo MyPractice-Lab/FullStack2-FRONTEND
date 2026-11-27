@@ -1,16 +1,25 @@
+import { useCallback } from 'react'
 import Table from 'react-bootstrap/Table'
 import { Link, useParams } from 'react-router-dom'
 import Etiqueta from '../../componentes/atomos/Etiqueta'
 import Titulo from '../../componentes/atomos/Titulo'
-import { listarOrdenesDeUsuario } from '../../data/ordenes'
+import { listarOrdenes } from '../../data/ordenes'
 import { obtenerUsuario } from '../../data/usuarios'
+import { usePeticion } from '../../hooks/usePeticion'
 import { formatearFecha, formatearPrecio } from '../../utils/formato'
 
 function HistorialCompras() {
   const { id } = useParams()
-  const usuario = obtenerUsuario(id)
 
-  if (usuario === null) {
+  const pedirUsuario = useCallback(() => obtenerUsuario(id), [id])
+  const peticionUsuario = usePeticion(pedirUsuario, [id])
+  const peticionOrdenes = usePeticion(listarOrdenes)
+
+  if (peticionUsuario.cargando || peticionOrdenes.cargando) {
+    return <p className="text-muted">Cargando el historial...</p>
+  }
+
+  if (peticionUsuario.error !== null || peticionUsuario.datos === null) {
     return (
       <p className="text-muted">
         Ese usuario no existe. <Link to="/admin/usuarios">Volver al listado</Link>.
@@ -18,7 +27,8 @@ function HistorialCompras() {
     )
   }
 
-  const ordenes = listarOrdenesDeUsuario(usuario.id)
+  const usuario = peticionUsuario.datos
+  const ordenes = (peticionOrdenes.datos ?? []).filter((orden) => orden.usuarioId === usuario.id)
   const gastado = ordenes
     .filter((orden) => orden.estado === 'pagada')
     .reduce((suma, orden) => suma + orden.totales.total, 0)

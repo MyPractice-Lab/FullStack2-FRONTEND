@@ -2,12 +2,14 @@ import Col from 'react-bootstrap/Col'
 import Row from 'react-bootstrap/Row'
 import { Link } from 'react-router-dom'
 import Boton from '../../componentes/atomos/Boton'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import Titulo from '../../componentes/atomos/Titulo'
 import TarjetaCategoria from '../../componentes/moleculas/TarjetaCategoria'
 import RejillaProductos from '../../componentes/organismos/RejillaProductos'
-import { listarCategorias } from '../../data/categorias'
 import { listarProductos } from '../../data/productos'
 import { useCarrito } from '../../hooks/useCarrito'
+import { useCatalogo } from '../../hooks/useCatalogo'
+import { usePeticion } from '../../hooks/usePeticion'
 import { tieneOferta } from '../../utils/catalogo'
 
 const BENEFICIOS = [
@@ -27,8 +29,10 @@ const BENEFICIOS = [
 
 function Home() {
   const { agregar } = useCarrito()
-  const productos = listarProductos()
-  const categorias = listarCategorias()
+  const { categorias } = useCatalogo()
+  const { datos, cargando, error } = usePeticion(listarProductos)
+
+  const productos = datos ?? []
   const destacados = productos.filter(tieneOferta).slice(0, 4)
 
   return (
@@ -59,6 +63,8 @@ function Home() {
           </Col>
         </Row>
       </section>
+
+      <EstadoPeticion cargando={cargando} error={error} mensaje="Cargando el catálogo..." />
 
       <section className="mb-5">
         <Titulo bajada="Encuentra lo que buscas según el tipo de producto.">Categorías</Titulo>

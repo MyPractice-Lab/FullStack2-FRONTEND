@@ -16,6 +16,10 @@ function botonEnviar(pantalla) {
   return pantalla.getByRole('main').getByRole('button', { name: 'Crear cuenta' })
 }
 
+function correoNuevo() {
+  return `ana.rojas.${Date.now()}@gmail.com`
+}
+
 beforeEach(() => {
   localStorage.clear()
 })
@@ -43,14 +47,15 @@ test('el formulario de registro muestra los errores propios de cada campo', asyn
     .element(pantalla.getByText('La contraseña debe tener al menos 8 caracteres. Escribiste 6.'))
     .toBeVisible()
 
-  expect(localStorage.getItem(CLAVES.usuarios)).toBeNull()
+  expect(localStorage.getItem(CLAVES.sesion)).toBeNull()
 })
 
-test('el registro valido crea la cuenta y la guarda en el navegador', async () => {
+test('el registro valido crea la cuenta en el backend y deja la sesion iniciada', async () => {
   const pantalla = await montar('/registro')
+  const correo = correoNuevo()
 
   await pantalla.getByRole('textbox', { name: 'Nombre completo' }).fill('Ana Rojas')
-  await pantalla.getByRole('textbox', { name: 'Correo electrónico' }).fill('ana.rojas@gmail.com')
+  await pantalla.getByRole('textbox', { name: 'Correo electrónico' }).fill(correo)
   await pantalla.getByLabelText(/^Contraseña/).fill('Clave2026')
   await pantalla.getByLabelText(/^Repetir contraseña/).fill('Clave2026')
   await pantalla.getByRole('combobox', { name: 'Región' }).selectOptions('Valparaíso')
@@ -62,13 +67,13 @@ test('el registro valido crea la cuenta y la guarda en el navegador', async () =
   await botonEnviar(pantalla).click()
 
   await expect
-    .element(pantalla.getByText('Cuenta creada correctamente. Ya puedes iniciar sesión.'))
+    .element(pantalla.getByText('Cuenta creada correctamente. Ya iniciaste sesión.'))
     .toBeVisible()
 
-  const usuarios = JSON.parse(localStorage.getItem(CLAVES.usuarios))
-  const creada = usuarios.find((usuario) => usuario.correo === 'ana.rojas@gmail.com')
+  const sesion = JSON.parse(localStorage.getItem(CLAVES.sesion))
 
-  expect(creada).toBeDefined()
-  expect(creada.rol).toBe('cliente')
-  expect(creada.comuna).toBe('Viña del Mar')
+  expect(sesion.correo).toBe(correo)
+  expect(sesion.rol).toBe('cliente')
+  expect(sesion.comuna).toBe('Viña del Mar')
+  expect(localStorage.getItem('zone_token')).not.toBeNull()
 })

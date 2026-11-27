@@ -11,8 +11,17 @@ import { MINIMO_DESPACHO_GRATIS } from '../../utils/totales'
 import { formatearPrecio } from '../../utils/formato'
 
 function Carrito() {
-  const { detalle, totales, cambiarCantidad, quitar, vaciar } = useCarrito()
+  const { detalle, totales, cambiarCantidad, quitar, vaciar, cargando } = useCarrito()
   const navegar = useNavigate()
+
+  if (cargando) {
+    return (
+      <>
+        <Titulo nivel={1}>Carrito de compras</Titulo>
+        <p className="text-muted">Cargando tu carrito...</p>
+      </>
+    )
+  }
 
   if (detalle.length === 0) {
     return (

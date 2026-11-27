@@ -10,7 +10,6 @@ import CampoFormulario from '../../componentes/moleculas/CampoFormulario'
 import ResumenTotales from '../../componentes/moleculas/ResumenTotales'
 import TablaResumenOrden from '../../componentes/organismos/TablaResumenOrden'
 import { crearOrden } from '../../data/ordenes'
-import { descontarStock } from '../../data/productos'
 import { comunasDe, regionesChile } from '../../data/regiones'
 import { useCarrito } from '../../hooks/useCarrito'
 import { useSesion } from '../../hooks/useSesion'
@@ -46,7 +45,7 @@ function datosIniciales(usuario) {
 }
 
 function Checkout() {
-  const { detalle, totales, vaciar } = useCarrito()
+  const { detalle, totales, vaciar, cargando } = useCarrito()
   const { usuario } = useSesion()
   const navegar = useNavigate()
 
@@ -54,6 +53,12 @@ function Checkout() {
   const [errores, setErrores] = useState({})
   const [resultadoPago, setResultadoPago] = useState('aprobado')
   const [pagoEnviado, setPagoEnviado] = useState(false)
+  const [fallo, setFallo] = useState(null)
+  const [procesando, setProcesando] = useState(false)
+
+  if (cargando) {
+    return <p className="text-muted">Cargando tu carrito...</p>
+  }
 
   if (detalle.length === 0 && pagoEnviado === false) {
     return <Navigate to="/carrito" replace />
@@ -69,8 +74,9 @@ function Checkout() {
     })
   }
 
-  function pagar(evento) {
+  async function pagar(evento) {
     evento.preventDefault()
+    setFallo(null)
 
     const encontrados = {
       nombre: validarRequerido(datos.nombre, 'El nombre es obligatorio.'),
@@ -89,29 +95,37 @@ function Checkout() {
 
     const aprobado = resultadoPago === 'aprobado'
 
-    const orden = crearOrden({
-      estado: aprobado ? 'pagada' : 'rechazada',
-      usuarioId: usuario?.id ?? null,
-      cliente: {
-        nombre: datos.nombre.trim(),
-        apellidos: datos.apellidos.trim(),
-        correo: datos.correo.trim(),
-      },
-      direccion: {
-        calle: datos.calle.trim(),
-        departamento: datos.departamento.trim(),
-        region: datos.region,
-        comuna: datos.comuna,
-        indicaciones: datos.indicaciones.trim(),
-      },
-      lineas: detalle,
-      totales,
-    })
+    setProcesando(true)
 
+    let orden
+
+    try {
+      orden = await crearOrden({
+        estado: aprobado ? 'pagada' : 'rechazada',
+        cliente: {
+          nombre: datos.nombre.trim(),
+          apellidos: datos.apellidos.trim(),
+          correo: datos.correo.trim(),
+        },
+        direccion: {
+          calle: datos.calle.trim(),
+          departamento: datos.departamento.trim(),
+          region: datos.region,
+          comuna: datos.comuna,
+          indicaciones: datos.indicaciones.trim(),
+        },
+        lineas: detalle,
+      })
+    } catch (error) {
+      setProcesando(false)
+      setFallo(error.message)
+      return
+    }
+
+    setProcesando(false)
     setPagoEnviado(true)
 
     if (aprobado) {
-      descontarStock(detalle)
       vaciar()
       navegar(`/pago/exitoso/${orden.codigo}`)
       return
@@ -267,13 +281,15 @@ function Checkout() {
                   onChange={() => setResultadoPago('rechazado')}
                 />
                 <Form.Text className="text-muted">
-                  El proyecto es solo frontend: esta opción reemplaza la respuesta real de la
-                  pasarela para poder probar los dos caminos.
+                  Esta opción reemplaza la respuesta real de la pasarela para poder probar los dos
+                  caminos. El estado se envía al backend junto con la orden.
                 </Form.Text>
               </fieldset>
 
-              <Boton tipo="submit" variante="exito" bloque>
-                Pagar ahora {formatearPrecio(totales.total)}
+              {fallo !== null && <Aviso tono="error">{fallo}</Aviso>}
+
+              <Boton tipo="submit" variante="exito" bloque deshabilitado={procesando}>
+                {procesando ? 'Procesando el pago...' : `Pagar ahora ${formatearPrecio(totales.total)}`}
               </Boton>
             </Form>
           </Col>

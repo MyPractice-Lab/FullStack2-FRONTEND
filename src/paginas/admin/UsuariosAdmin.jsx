@@ -4,16 +4,20 @@ import { Link } from 'react-router-dom'
 import Aviso from '../../componentes/atomos/Aviso'
 import Boton from '../../componentes/atomos/Boton'
 import Etiqueta from '../../componentes/atomos/Etiqueta'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import Titulo from '../../componentes/atomos/Titulo'
 import { eliminarUsuario, listarUsuarios } from '../../data/usuarios'
+import { usePeticion } from '../../hooks/usePeticion'
 import { useSesion } from '../../hooks/useSesion'
 
 function UsuariosAdmin() {
   const { usuario: conectado } = useSesion()
-  const [usuarios, setUsuarios] = useState(() => listarUsuarios())
+  const { datos, cargando, error, recargar } = usePeticion(listarUsuarios)
   const [aviso, setAviso] = useState(null)
 
-  function borrar(usuario) {
+  const usuarios = datos ?? []
+
+  async function borrar(usuario) {
     if (usuario.id === conectado.id) {
       setAviso({ tono: 'error', texto: 'No puedes eliminar la cuenta con la que estás conectado.' })
       return
@@ -23,9 +27,13 @@ function UsuariosAdmin() {
       return
     }
 
-    eliminarUsuario(usuario.id)
-    setUsuarios(listarUsuarios())
-    setAviso({ tono: 'exito', texto: `Se eliminó la cuenta de ${usuario.nombre}.` })
+    try {
+      await eliminarUsuario(usuario.id)
+      setAviso({ tono: 'exito', texto: `Se eliminó la cuenta de ${usuario.nombre}.` })
+      recargar()
+    } catch (fallo) {
+      setAviso({ tono: 'error', texto: fallo.message })
+    }
   }
 
   return (
@@ -44,6 +52,8 @@ function UsuariosAdmin() {
           {aviso.texto}
         </Aviso>
       )}
+
+      <EstadoPeticion cargando={cargando} error={error} mensaje="Cargando las cuentas..." />
 
       <Table responsive bordered className="align-middle bg-white">
         <caption className="visually-hidden">Listado de usuarios registrados</caption>

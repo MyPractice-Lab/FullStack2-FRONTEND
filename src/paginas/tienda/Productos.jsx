@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import Titulo from '../../componentes/atomos/Titulo'
 import FiltrosCatalogo from '../../componentes/organismos/FiltrosCatalogo'
 import RejillaProductos from '../../componentes/organismos/RejillaProductos'
-import { listarCategorias } from '../../data/categorias'
 import { listarProductos } from '../../data/productos'
 import { useCarrito } from '../../hooks/useCarrito'
+import { useCatalogo } from '../../hooks/useCatalogo'
+import { usePeticion } from '../../hooks/usePeticion'
 import { filtrarProductos } from '../../utils/catalogo'
 
 function Productos() {
   const [parametros] = useSearchParams()
   const { agregar } = useCarrito()
+  const { categorias } = useCatalogo()
+  const { datos, cargando, error } = usePeticion(listarProductos)
 
   const [criterios, setCriterios] = useState({
     texto: parametros.get('buscar') ?? '',
@@ -18,7 +22,7 @@ function Productos() {
     orden: 'relevancia',
   })
 
-  const productos = filtrarProductos(listarProductos(), criterios)
+  const productos = filtrarProductos(datos ?? [], criterios)
 
   return (
     <>
@@ -26,9 +30,11 @@ function Productos() {
         Productos
       </Titulo>
 
+      <EstadoPeticion cargando={cargando} error={error} mensaje="Cargando el catálogo..." />
+
       <FiltrosCatalogo
         criterios={criterios}
-        categorias={listarCategorias()}
+        categorias={categorias}
         onCambiar={setCriterios}
         resultados={productos.length}
       />

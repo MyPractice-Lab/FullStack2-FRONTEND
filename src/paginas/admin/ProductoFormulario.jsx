@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Col from 'react-bootstrap/Col'
 import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
@@ -7,8 +7,9 @@ import Aviso from '../../componentes/atomos/Aviso'
 import Boton from '../../componentes/atomos/Boton'
 import Titulo from '../../componentes/atomos/Titulo'
 import CampoFormulario from '../../componentes/moleculas/CampoFormulario'
-import { listarCategorias } from '../../data/categorias'
 import { actualizarProducto, crearProducto, obtenerProducto } from '../../data/productos'
+import { useCatalogo } from '../../hooks/useCatalogo'
+import { usePeticion } from '../../hooks/usePeticion'
 import {
   hayErrores,
   validarPrecio,
@@ -45,13 +46,30 @@ function desdeProducto(producto) {
 function ProductoFormulario() {
   const { id } = useParams()
   const navegar = useNavigate()
+  const { categorias } = useCatalogo()
 
-  const existente = id === undefined ? null : obtenerProducto(id)
-  const [datos, setDatos] = useState(() => (existente === null ? VACIO : desdeProducto(existente)))
+  const pedirProducto = useCallback(
+    () => (id === undefined ? Promise.resolve(null) : obtenerProducto(id)),
+    [id],
+  )
+  const { datos: existente, cargando, error } = usePeticion(pedirProducto, [id])
+
+  const [datos, setDatos] = useState(VACIO)
   const [errores, setErrores] = useState({})
   const [resumen, setResumen] = useState(null)
+  const [guardando, setGuardando] = useState(false)
 
-  if (id !== undefined && existente === null) {
+  useEffect(() => {
+    if (existente !== null) {
+      setDatos(desdeProducto(existente))
+    }
+  }, [existente])
+
+  if (cargando) {
+    return <p className="text-muted">Cargando el producto...</p>
+  }
+
+  if (id !== undefined && (error !== null || existente === null)) {
     return (
       <p className="text-muted">
         Ese producto no existe. <Link to="/admin/productos">Volver al listado</Link>.
@@ -63,7 +81,7 @@ function ProductoFormulario() {
     setDatos((actuales) => ({ ...actuales, [campo]: valor }))
   }
 
-  function guardar(evento) {
+  async function guardar(evento) {
     evento.preventDefault()
 
     const encontrados = {
@@ -85,12 +103,22 @@ function ProductoFormulario() {
       return
     }
 
-    if (existente === null) {
-      crearProducto(datos)
-    } else {
-      actualizarProducto(existente.id, datos)
+    setGuardando(true)
+
+    try {
+      if (existente === null) {
+        await crearProducto(datos)
+      } else {
+        await actualizarProducto(existente.id, datos)
+      }
+    } catch (fallo) {
+      setGuardando(false)
+      setErrores((actuales) => ({ ...actuales, ...fallo.campos }))
+      setResumen({ tono: 'error', texto: fallo.message })
+      return
     }
 
+    setGuardando(false)
     navegar('/admin/productos')
   }
 
@@ -128,7 +156,7 @@ function ProductoFormulario() {
               valor={datos.categoria}
               onCambiar={(valor) => cambiar('categoria', valor)}
               error={errores.categoria}
-              opciones={listarCategorias().map((categoria) => ({
+              opciones={categorias.map((categoria) => ({
                 valor: categoria.slug,
                 texto: categoria.nombre,
               }))}
@@ -213,7 +241,9 @@ function ProductoFormulario() {
         />
 
         <div className="d-flex gap-2">
-          <Boton tipo="submit">{existente === null ? 'Crear producto' : 'Guardar cambios'}</Boton>
+          <Boton tipo="submit" deshabilitado={guardando}>
+            {existente === null ? 'Crear producto' : 'Guardar cambios'}
+          </Boton>
           <Boton variante="neutro" as={Link} to="/admin/productos">
             Cancelar
           </Boton>

@@ -1,16 +1,24 @@
+import { useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Boton from '../../componentes/atomos/Boton'
 import Etiqueta from '../../componentes/atomos/Etiqueta'
 import Titulo from '../../componentes/atomos/Titulo'
 import FichaOrden from '../../componentes/organismos/FichaOrden'
 import { obtenerOrden } from '../../data/ordenes'
+import { usePeticion } from '../../hooks/usePeticion'
 import { formatearFecha } from '../../utils/formato'
 
 function Boleta() {
   const { codigo } = useParams()
-  const orden = obtenerOrden(codigo)
 
-  if (orden === null) {
+  const pedirOrden = useCallback(() => obtenerOrden(codigo), [codigo])
+  const { datos: orden, cargando, error } = usePeticion(pedirOrden, [codigo])
+
+  if (cargando) {
+    return <p className="text-muted">Cargando la boleta...</p>
+  }
+
+  if (error !== null || orden === null) {
     return (
       <p className="text-muted">
         No encontramos esa orden. <Link to="/admin/ordenes">Volver al listado</Link>.

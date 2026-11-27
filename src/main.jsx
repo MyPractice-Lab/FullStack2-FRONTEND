@@ -5,15 +5,18 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import './index.css'
 import App from './App.jsx'
 import { ProveedorCarrito } from './contexto/CarritoContexto.jsx'
+import { ProveedorCatalogo } from './contexto/CatalogoContexto.jsx'
 import { ProveedorSesion } from './contexto/SesionContexto.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <ProveedorSesion>
-        <ProveedorCarrito>
-          <App />
-        </ProveedorCarrito>
+        <ProveedorCatalogo>
+          <ProveedorCarrito>
+            <App />
+          </ProveedorCarrito>
+        </ProveedorCatalogo>
       </ProveedorSesion>
     </BrowserRouter>
   </StrictMode>,

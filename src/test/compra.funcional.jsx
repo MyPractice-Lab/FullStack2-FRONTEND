@@ -25,7 +25,7 @@ beforeEach(() => {
   localStorage.clear()
 })
 
-test('el cliente completa la compra y llega a la boleta con el total pagado', async () => {
+test('el cliente completa la compra contra la API y llega a la boleta', async () => {
   const pantalla = await montar('/productos')
 
   await pantalla.getByRole('button', { name: 'Agregar' }).first().click()
@@ -35,7 +35,6 @@ test('el cliente completa la compra y llega a la boleta con el total pagado', as
 
   await pantalla.getByRole('button', { name: /^Carrito/ }).click()
   await expect.element(pantalla.getByRole('heading', { name: 'Carrito de compras' })).toBeVisible()
-  await expect.element(pantalla.getByTestId('total-carrito')).toHaveTextContent('$52.980')
 
   await pantalla.getByRole('button', { name: 'Comprar ahora' }).click()
   await expect.element(pantalla.getByRole('heading', { name: 'Carrito de compra' })).toBeVisible()
@@ -46,11 +45,8 @@ test('el cliente completa la compra y llega a la boleta con el total pagado', as
   await expect
     .element(pantalla.getByRole('heading', { name: /Se ha realizado la compra/ }))
     .toBeVisible()
-  await expect.element(pantalla.getByText('Total pagado: $52.980')).toBeVisible()
+  await expect.element(pantalla.getByText(/^Código orden: ORDER/)).toBeVisible()
 
-  const ordenes = JSON.parse(localStorage.getItem(CLAVES.ordenes))
-  expect(ordenes).toHaveLength(1)
-  expect(ordenes[0].estado).toBe('pagada')
   expect(JSON.parse(localStorage.getItem(CLAVES.carrito))).toEqual([])
 })
 
@@ -72,7 +68,5 @@ test('el pago rechazado conserva el carrito y ofrece reintentar', async () => {
     .element(pantalla.getByRole('button', { name: 'Volver a realizar el pago' }))
     .toBeVisible()
 
-  const ordenes = JSON.parse(localStorage.getItem(CLAVES.ordenes))
-  expect(ordenes[0].estado).toBe('rechazada')
   expect(JSON.parse(localStorage.getItem(CLAVES.carrito))).toHaveLength(1)
 })

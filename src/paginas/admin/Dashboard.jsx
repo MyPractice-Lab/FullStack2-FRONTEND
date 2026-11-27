@@ -2,11 +2,13 @@ import Card from 'react-bootstrap/Card'
 import Col from 'react-bootstrap/Col'
 import Row from 'react-bootstrap/Row'
 import { Link } from 'react-router-dom'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import Titulo from '../../componentes/atomos/Titulo'
 import TarjetaMetrica from '../../componentes/moleculas/TarjetaMetrica'
 import { listarOrdenes } from '../../data/ordenes'
 import { listarProductos } from '../../data/productos'
 import { listarUsuarios } from '../../data/usuarios'
+import { usePeticion } from '../../hooks/usePeticion'
 import { productosCriticos } from '../../utils/catalogo'
 import { formatearPrecio } from '../../utils/formato'
 
@@ -20,9 +22,16 @@ const ACCESOS = [
 ]
 
 function Dashboard() {
-  const ordenes = listarOrdenes()
-  const productos = listarProductos()
-  const usuarios = listarUsuarios()
+  const peticionOrdenes = usePeticion(listarOrdenes)
+  const peticionProductos = usePeticion(listarProductos)
+  const peticionUsuarios = usePeticion(listarUsuarios)
+
+  const ordenes = peticionOrdenes.datos ?? []
+  const productos = peticionProductos.datos ?? []
+  const usuarios = peticionUsuarios.datos ?? []
+
+  const cargando = peticionOrdenes.cargando || peticionProductos.cargando || peticionUsuarios.cargando
+  const error = peticionOrdenes.error ?? peticionProductos.error ?? peticionUsuarios.error
 
   const pagadas = ordenes.filter((orden) => orden.estado === 'pagada')
   const vendido = pagadas.reduce((suma, orden) => suma + orden.totales.total, 0)
@@ -33,6 +42,8 @@ function Dashboard() {
       <Titulo nivel={1} bajada="Resumen de las actividades de la tienda.">
         Dashboard
       </Titulo>
+
+      <EstadoPeticion cargando={cargando} error={error} mensaje="Cargando las métricas..." />
 
       <Row xs={1} md={3} className="g-3 mb-4">
         <Col>

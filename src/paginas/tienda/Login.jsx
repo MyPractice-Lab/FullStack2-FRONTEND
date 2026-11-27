@@ -17,12 +17,13 @@ function Login() {
   const [datos, setDatos] = useState({ correo: '', clave: '' })
   const [errores, setErrores] = useState({})
   const [rechazo, setRechazo] = useState(null)
+  const [enviando, setEnviando] = useState(false)
 
   function cambiar(campo, valor) {
     setDatos((actuales) => ({ ...actuales, [campo]: valor }))
   }
 
-  function enviar(evento) {
+  async function enviar(evento) {
     evento.preventDefault()
     setRechazo(null)
 
@@ -37,7 +38,9 @@ function Login() {
       return
     }
 
-    const resultado = iniciarSesion(datos.correo, datos.clave)
+    setEnviando(true)
+    const resultado = await iniciarSesion(datos.correo, datos.clave)
+    setEnviando(false)
 
     if (resultado.ok === false) {
       setRechazo(resultado.motivo)
@@ -81,8 +84,8 @@ function Login() {
             requerido
           />
 
-          <Boton tipo="submit" bloque>
-            Entrar
+          <Boton tipo="submit" bloque deshabilitado={enviando}>
+            {enviando ? 'Entrando...' : 'Entrar'}
           </Boton>
         </Form>
 

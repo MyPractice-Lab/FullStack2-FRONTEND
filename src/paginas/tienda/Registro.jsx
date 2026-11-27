@@ -8,7 +8,7 @@ import Boton from '../../componentes/atomos/Boton'
 import Titulo from '../../componentes/atomos/Titulo'
 import CampoFormulario from '../../componentes/moleculas/CampoFormulario'
 import { comunasDe, regionesChile } from '../../data/regiones'
-import { crearUsuario, obtenerUsuarioPorCorreo } from '../../data/usuarios'
+import { useSesion } from '../../hooks/useSesion'
 import {
   hayErrores,
   sugerenciaCorreo,
@@ -31,9 +31,11 @@ const INICIAL = {
 
 function Registro() {
   const navegar = useNavigate()
+  const { registrarCliente } = useSesion()
   const [datos, setDatos] = useState(INICIAL)
   const [errores, setErrores] = useState({})
   const [resumen, setResumen] = useState(null)
+  const [enviando, setEnviando] = useState(false)
 
   function cambiar(campo, valor) {
     setDatos((actuales) => {
@@ -45,7 +47,7 @@ function Registro() {
     })
   }
 
-  function enviar(evento) {
+  async function enviar(evento) {
     evento.preventDefault()
 
     const encontrados = {
@@ -60,10 +62,6 @@ function Registro() {
         : 'Debes aceptar los términos y condiciones para crear la cuenta.',
     }
 
-    if (encontrados.correo === null && obtenerUsuarioPorCorreo(datos.correo) !== null) {
-      encontrados.correo = 'Ya existe una cuenta registrada con ese correo.'
-    }
-
     setErrores(encontrados)
 
     if (hayErrores(encontrados)) {
@@ -74,7 +72,9 @@ function Registro() {
       return
     }
 
-    crearUsuario({
+    setEnviando(true)
+
+    const resultado = await registrarCliente({
       nombre: datos.nombre.trim(),
       correo: datos.correo,
       clave: datos.clave,
@@ -82,9 +82,17 @@ function Registro() {
       comuna: datos.comuna,
     })
 
+    setEnviando(false)
+
+    if (resultado.ok === false) {
+      setErrores((actuales) => ({ ...actuales, ...resultado.campos }))
+      setResumen({ tono: 'error', texto: resultado.motivo })
+      return
+    }
+
     setDatos(INICIAL)
-    setResumen({ tono: 'exito', texto: 'Cuenta creada correctamente. Ya puedes iniciar sesión.' })
-    setTimeout(() => navegar('/login'), 1200)
+    setResumen({ tono: 'exito', texto: 'Cuenta creada correctamente. Ya iniciaste sesión.' })
+    setTimeout(() => navegar('/'), 1200)
   }
 
   return (
@@ -193,8 +201,8 @@ function Registro() {
             error={errores.terminos}
           />
 
-          <Boton tipo="submit" bloque>
-            Crear cuenta
+          <Boton tipo="submit" bloque deshabilitado={enviando}>
+            {enviando ? 'Creando la cuenta...' : 'Crear cuenta'}
           </Boton>
         </Form>
       </Col>

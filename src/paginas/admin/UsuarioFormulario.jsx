@@ -1,18 +1,15 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Col from 'react-bootstrap/Col'
 import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import Aviso from '../../componentes/atomos/Aviso'
 import Boton from '../../componentes/atomos/Boton'
 import Titulo from '../../componentes/atomos/Titulo'
 import CampoFormulario from '../../componentes/moleculas/CampoFormulario'
 import { comunasDe, regionesChile } from '../../data/regiones'
-import {
-  actualizarUsuario,
-  crearUsuario,
-  obtenerUsuario,
-  obtenerUsuarioPorCorreo,
-} from '../../data/usuarios'
+import { actualizarUsuario, crearUsuario, obtenerUsuario } from '../../data/usuarios'
+import { usePeticion } from '../../hooks/usePeticion'
 import {
   hayErrores,
   sugerenciaCorreo,
@@ -27,19 +24,43 @@ const ROLES = [
   { valor: 'administrador', texto: 'Administrador' },
 ]
 
+const VACIO = {
+  nombre: '',
+  correo: '',
+  clave: '',
+  rol: 'cliente',
+  region: '',
+  comuna: '',
+  calle: '',
+  activo: true,
+}
+
 function UsuarioFormulario() {
   const { id } = useParams()
   const navegar = useNavigate()
 
-  const existente = id === undefined ? null : obtenerUsuario(id)
-  const [datos, setDatos] = useState(() =>
-    existente === null
-      ? { nombre: '', correo: '', clave: '', rol: 'cliente', region: '', comuna: '', calle: '', activo: true }
-      : { ...existente, clave: '' },
+  const pedirUsuario = useCallback(
+    () => (id === undefined ? Promise.resolve(null) : obtenerUsuario(id)),
+    [id],
   )
-  const [errores, setErrores] = useState({})
+  const { datos: existente, cargando, error } = usePeticion(pedirUsuario, [id])
 
-  if (id !== undefined && existente === null) {
+  const [datos, setDatos] = useState(VACIO)
+  const [errores, setErrores] = useState({})
+  const [fallo, setFallo] = useState(null)
+  const [guardando, setGuardando] = useState(false)
+
+  useEffect(() => {
+    if (existente !== null) {
+      setDatos({ ...existente, clave: '' })
+    }
+  }, [existente])
+
+  if (cargando) {
+    return <p className="text-muted">Cargando la cuenta...</p>
+  }
+
+  if (id !== undefined && (error !== null || existente === null)) {
     return (
       <p className="text-muted">
         Ese usuario no existe. <Link to="/admin/usuarios">Volver al listado</Link>.
@@ -57,8 +78,9 @@ function UsuarioFormulario() {
     })
   }
 
-  function guardar(evento) {
+  async function guardar(evento) {
     evento.preventDefault()
+    setFallo(null)
 
     const encontrados = {
       nombre: validarNombre(datos.nombre),
@@ -67,32 +89,34 @@ function UsuarioFormulario() {
       clave: existente === null || datos.clave !== '' ? validarClave(datos.clave) : null,
     }
 
-    if (encontrados.correo === null) {
-      const duplicado = obtenerUsuarioPorCorreo(datos.correo)
-
-      if (duplicado !== null && duplicado.id !== existente?.id) {
-        encontrados.correo = 'Ya existe otra cuenta con ese correo.'
-      }
-    }
-
     setErrores(encontrados)
 
     if (hayErrores(encontrados)) {
       return
     }
 
-    if (existente === null) {
-      crearUsuario(datos)
-    } else {
-      const cambios = { ...datos }
+    setGuardando(true)
 
-      if (cambios.clave === '') {
-        delete cambios.clave
+    try {
+      if (existente === null) {
+        await crearUsuario(datos)
+      } else {
+        const cambios = { ...datos }
+
+        if (cambios.clave === '') {
+          delete cambios.clave
+        }
+
+        await actualizarUsuario(existente.id, cambios)
       }
-
-      actualizarUsuario(existente.id, cambios)
+    } catch (error) {
+      setGuardando(false)
+      setErrores((actuales) => ({ ...actuales, ...error.campos }))
+      setFallo(error.message)
+      return
     }
 
+    setGuardando(false)
     navegar('/admin/usuarios')
   }
 
@@ -104,6 +128,8 @@ function UsuarioFormulario() {
       >
         {existente === null ? 'Nuevo usuario' : 'Editar usuario'}
       </Titulo>
+
+      {fallo !== null && <Aviso tono="error">{fallo}</Aviso>}
 
       <Form noValidate onSubmit={guardar} style={{ maxWidth: '44rem' }}>
         <CampoFormulario
@@ -207,7 +233,9 @@ function UsuarioFormulario() {
         />
 
         <div className="d-flex gap-2">
-          <Boton tipo="submit">{existente === null ? 'Crear usuario' : 'Guardar cambios'}</Boton>
+          <Boton tipo="submit" deshabilitado={guardando}>
+            {existente === null ? 'Crear usuario' : 'Guardar cambios'}
+          </Boton>
           <Boton variante="neutro" as={Link} to="/admin/usuarios">
             Cancelar
           </Boton>

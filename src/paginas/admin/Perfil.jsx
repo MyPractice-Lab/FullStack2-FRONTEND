@@ -22,7 +22,8 @@ function Perfil() {
     comuna: usuario.comuna ?? '',
   })
   const [errores, setErrores] = useState({})
-  const [aviso, setAviso] = useState('')
+  const [aviso, setAviso] = useState(null)
+  const [guardando, setGuardando] = useState(false)
 
   function cambiar(campo, valor) {
     setDatos((actuales) => {
@@ -34,8 +35,9 @@ function Perfil() {
     })
   }
 
-  function guardar(evento) {
+  async function guardar(evento) {
     evento.preventDefault()
+    setAviso(null)
 
     const encontrados = {
       nombre: validarNombre(datos.nombre),
@@ -48,9 +50,18 @@ function Perfil() {
       return
     }
 
-    const actualizado = actualizarUsuario(usuario.id, datos)
-    refrescarSesion(actualizado)
-    setAviso('Datos del perfil actualizados.')
+    setGuardando(true)
+
+    try {
+      const actualizado = await actualizarUsuario(usuario.id, datos)
+      refrescarSesion(actualizado)
+      setAviso({ tono: 'exito', texto: 'Datos del perfil actualizados.' })
+    } catch (fallo) {
+      setErrores((actuales) => ({ ...actuales, ...fallo.campos }))
+      setAviso({ tono: 'error', texto: fallo.message })
+    }
+
+    setGuardando(false)
   }
 
   return (
@@ -59,9 +70,9 @@ function Perfil() {
         Perfil
       </Titulo>
 
-      {aviso !== '' && (
-        <Aviso tono="exito" onCerrar={() => setAviso('')}>
-          {aviso}
+      {aviso !== null && (
+        <Aviso tono={aviso.tono} onCerrar={() => setAviso(null)}>
+          {aviso.texto}
         </Aviso>
       )}
 
@@ -124,7 +135,9 @@ function Perfil() {
           </Col>
         </Row>
 
-        <Boton tipo="submit">Guardar cambios</Boton>
+        <Boton tipo="submit" deshabilitado={guardando}>
+          {guardando ? 'Guardando...' : 'Guardar cambios'}
+        </Boton>
       </Form>
     </>
   )

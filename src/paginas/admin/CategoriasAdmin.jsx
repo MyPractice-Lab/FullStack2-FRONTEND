@@ -3,30 +3,28 @@ import Table from 'react-bootstrap/Table'
 import { Link } from 'react-router-dom'
 import Aviso from '../../componentes/atomos/Aviso'
 import Boton from '../../componentes/atomos/Boton'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import Titulo from '../../componentes/atomos/Titulo'
-import { eliminarCategoria, listarCategorias } from '../../data/categorias'
+import { eliminarCategoria } from '../../data/categorias'
 import { listarProductos } from '../../data/productos'
+import { useCatalogo } from '../../hooks/useCatalogo'
+import { usePeticion } from '../../hooks/usePeticion'
 
 function CategoriasAdmin() {
-  const [categorias, setCategorias] = useState(() => listarCategorias())
+  const { categorias, cargando, error, recargar } = useCatalogo()
+  const peticionProductos = usePeticion(listarProductos)
   const [aviso, setAviso] = useState(null)
 
-  const productos = listarProductos()
+  const productos = peticionProductos.datos ?? []
 
-  function borrar(categoria) {
-    const usadas = productos.filter((producto) => producto.categoria === categoria.slug).length
-
-    if (usadas > 0) {
-      setAviso({
-        tono: 'error',
-        texto: `No se puede eliminar "${categoria.nombre}": tiene ${usadas} producto(s) asociados.`,
-      })
-      return
+  async function borrar(categoria) {
+    try {
+      await eliminarCategoria(categoria.id)
+      setAviso({ tono: 'exito', texto: `Se eliminó la categoría "${categoria.nombre}".` })
+      recargar()
+    } catch (fallo) {
+      setAviso({ tono: 'error', texto: fallo.message })
     }
-
-    eliminarCategoria(categoria.id)
-    setCategorias(listarCategorias())
-    setAviso({ tono: 'exito', texto: `Se eliminó la categoría "${categoria.nombre}".` })
   }
 
   return (
@@ -45,6 +43,12 @@ function CategoriasAdmin() {
           {aviso.texto}
         </Aviso>
       )}
+
+      <EstadoPeticion
+        cargando={cargando || peticionProductos.cargando}
+        error={error ?? peticionProductos.error}
+        mensaje="Cargando las categorías..."
+      />
 
       <Table responsive bordered className="align-middle bg-white">
         <caption className="visually-hidden">Listado de categorías</caption>

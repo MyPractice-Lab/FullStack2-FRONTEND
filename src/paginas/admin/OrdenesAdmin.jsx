@@ -1,18 +1,23 @@
 import Table from 'react-bootstrap/Table'
 import { Link } from 'react-router-dom'
 import Etiqueta from '../../componentes/atomos/Etiqueta'
+import EstadoPeticion from '../../componentes/atomos/EstadoPeticion'
 import Titulo from '../../componentes/atomos/Titulo'
 import { listarOrdenes } from '../../data/ordenes'
+import { usePeticion } from '../../hooks/usePeticion'
 import { formatearFecha, formatearPrecio } from '../../utils/formato'
 
 function OrdenesAdmin() {
-  const ordenes = listarOrdenes()
+  const { datos, cargando, error } = usePeticion(listarOrdenes)
+  const ordenes = datos ?? []
 
   return (
     <>
       <Titulo nivel={1} bajada="Todas las órdenes registradas por la tienda.">
         Órdenes y boletas
       </Titulo>
+
+      <EstadoPeticion cargando={cargando} error={error} mensaje="Cargando las órdenes..." />
 
       {ordenes.length === 0 ? (
         <p className="text-muted">Todavía no hay órdenes registradas.</p>
