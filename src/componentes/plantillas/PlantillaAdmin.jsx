@@ -29,10 +29,10 @@ function PlantillaAdmin() {
 
       <Container fluid className="flex-grow-1">
         <Row>
-          <Col md={3} lg={2} className="px-0">
+          <Col md={3} lg={2} className="px-0 no-imprimir">
             <BarraLateralAdmin onCerrarSesion={salir} />
           </Col>
-          <Col md={9} lg={10} as="main" className="py-4">
+          <Col md={9} lg={10} as="main" className="py-4 zone-impresion">
             <Outlet />
           </Col>
         </Row>

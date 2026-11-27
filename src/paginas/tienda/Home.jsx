@@ -9,6 +9,7 @@ import RejillaProductos from '../../componentes/organismos/RejillaProductos'
 import { listarProductos } from '../../data/productos'
 import { useCarrito } from '../../hooks/useCarrito'
 import { useCatalogo } from '../../hooks/useCatalogo'
+import { useSesion } from '../../hooks/useSesion'
 import { usePeticion } from '../../hooks/usePeticion'
 import { tieneOferta } from '../../utils/catalogo'
 
@@ -30,6 +31,7 @@ const BENEFICIOS = [
 function Home() {
   const { agregar } = useCarrito()
   const { categorias } = useCatalogo()
+  const { autenticado } = useSesion()
   const { datos, cargando, error } = usePeticion(listarProductos)
 
   const productos = datos ?? []
@@ -49,9 +51,11 @@ function Home() {
               <Boton as={Link} to="/productos">
                 Ver catálogo
               </Boton>
-              <Boton variante="secundario" as={Link} to="/registro">
-                Crear cuenta
-              </Boton>
+              {autenticado === false && (
+                <Boton variante="secundario" as={Link} to="/registro">
+                  Crear cuenta
+                </Boton>
+              )}
             </div>
           </Col>
           <Col md={5}>

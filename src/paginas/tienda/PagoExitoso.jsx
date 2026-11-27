@@ -41,7 +41,7 @@ function PagoExitoso() {
 
       <FichaOrden orden={orden} />
 
-      <div className="d-flex gap-2 justify-content-center mt-3 flex-wrap">
+      <div className="d-flex gap-2 justify-content-center mt-3 flex-wrap no-imprimir">
         <Boton variante="peligro" onClick={() => window.print()}>
           Imprimir boleta en PDF
         </Boton>

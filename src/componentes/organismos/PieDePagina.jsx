@@ -2,8 +2,11 @@ import Col from 'react-bootstrap/Col'
 import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
 import { Link } from 'react-router-dom'
+import { useSesion } from '../../hooks/useSesion'
 
 function PieDePagina() {
+  const { autenticado, esAdministrador } = useSesion()
+
   return (
     <footer className="zone-pie py-4">
       <Container>
@@ -38,12 +41,21 @@ function PieDePagina() {
           <Col md={3} as="section">
             <h3>Tu cuenta</h3>
             <ul className="list-unstyled mb-0">
-              <li>
-                <Link to="/login">Iniciar sesión</Link>
-              </li>
-              <li>
-                <Link to="/registro">Crear cuenta</Link>
-              </li>
+              {autenticado === false && (
+                <>
+                  <li>
+                    <Link to="/login">Iniciar sesión</Link>
+                  </li>
+                  <li>
+                    <Link to="/registro">Crear cuenta</Link>
+                  </li>
+                </>
+              )}
+              {esAdministrador && (
+                <li>
+                  <Link to="/admin">Administración</Link>
+                </li>
+              )}
               <li>
                 <Link to="/carrito">Mi carrito</Link>
               </li>

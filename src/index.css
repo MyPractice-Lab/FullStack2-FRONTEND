@@ -136,6 +136,13 @@ body {
   background-color: var(--zone-superficie-alta);
 }
 
+.zone-imagen-ficha {
+  max-height: 420px;
+  object-fit: contain;
+  background-color: var(--zone-superficie-alta);
+  padding: 1rem;
+}
+
 .zone-imagen-miniatura {
   width: 56px;
   height: 42px;
@@ -174,4 +181,45 @@ body {
   width: 100%;
   border: 1px solid var(--zone-borde);
   background-color: #000000;
+}
+
+
+/* ---------------------------------------------------------------
+   Impresion: la boleta debe salir sola, sin el resto de la tienda
+   --------------------------------------------------------------- */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .zone-cabecera,
+  .zone-pie,
+  .zone-video,
+  nav,
+  footer,
+  .no-imprimir {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  .zone-panel,
+  table {
+    break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: none !important;
+  }
+
+  * {
+    color: #000 !important;
+    box-shadow: none !important;
+  }
 }

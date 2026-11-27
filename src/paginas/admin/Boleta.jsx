@@ -41,7 +41,7 @@ function Boleta() {
 
       <FichaOrden orden={orden} />
 
-      <div className="d-flex gap-2 mt-3">
+      <div className="d-flex gap-2 mt-3 no-imprimir">
         <Boton variante="neutro" as={Link} to="/admin/ordenes">
           Volver al listado
         </Boton>

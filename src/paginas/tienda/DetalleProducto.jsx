@@ -42,7 +42,7 @@ function DetalleProducto() {
   return (
     <Row className="g-4">
       <Col md={5}>
-        <ImagenProducto origen={producto.imagen} descripcion={producto.nombre} />
+        <ImagenProducto origen={producto.imagen} descripcion={producto.nombre} ficha />
       </Col>
 
       <Col md={7}>
